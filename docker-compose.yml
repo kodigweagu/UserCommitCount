@@ -1,0 +1,9 @@
+version: '20.10.7'
+services:
+  core_api:
+    build: .
+    container_name: "core-api-container"
+    ports:
+      - "8080"
+    volumes:
+      - ./app/:/app
