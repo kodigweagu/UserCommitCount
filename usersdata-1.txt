@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Charanpreet Parmar",
+        "email": "cparmar@teradici.com"
+    },
+    {
+        "name": "cptera",
+        "email": "cptera@users.noreply.github.com"
+    },
+    {
+        "name": "fwang-teradici",
+        "email": "fwang@teradici.com"
+    },
+    {
+        "name": "Erick Saunders de Farias",
+        "email": "esaunders@teradici.com"
+    },
+    {
+        "name": "Erick Saunders de Farias",
+        "email": "fariaserick@startmail.com"
+    }
+]
