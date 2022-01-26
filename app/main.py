@@ -15,15 +15,14 @@ redis_instance = redis.Redis(host='redis', port=6379, db=0)
 
 def get_data(start, end):
     users = []
-    data = redis_instance.get(start+'|'+end)
+    cache_id = start+'|'+end
+    data = redis_instance.get(cache_id)
     if data:
         data = json.loads(data.decode('utf-8'))
-        print('_\nRedis...\nGetting {} until {} data from redis.\n'.format(start, end))
     else:
         data = requests.get('https://api.github.com/repos/teradici/deploy/commits?since={}&until={}'.format(start, end))
         data = data.json()
-        redis_instance.set(start+'|'+end, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
-        print('_\nRedis...\Adding {} until {} data to redis.\n'.format(start, end))
+        redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
 
     for commit in data:
         user = next((entry for entry in users if entry.email == commit['commit']['author']['email']), None)
