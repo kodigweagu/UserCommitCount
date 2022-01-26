@@ -2,6 +2,11 @@
 from fastapi import FastAPI
 from User import User
 import requests
+import json
+
+import redis
+
+redis_instance = redis.Redis(host='redis', port=6379, db=0)
 
 DEFAULT_START = '2019-06-01'
 DEFAULT_END = '2020-05-31'
@@ -10,8 +15,12 @@ app = FastAPI()
 
 def get_data(start, end):
     users = []
-    data = requests.get('https://api.github.com/repos/teradici/deploy/commits?since={}&until={}'.format(start, end))
-    data = data.json()
+    data = json.loads(redis_instance.get(start+'|'+end))
+    if not data:
+        data = requests.get('https://api.github.com/repos/teradici/deploy/commits?since={}&until={}'.format(start, end))
+        data = data.json()
+        redis_instance.set(start+'|'+end, json.dumps(data))
+
     for commit in data:
         user = next((entry for entry in users if entry.email == commit['commit']['author']['email']), None)
         if user == None:
