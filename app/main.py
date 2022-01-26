@@ -6,20 +6,24 @@ import json
 
 import redis
 
-redis_instance = redis.Redis(host='redis', port=6379, db=0)
-
 DEFAULT_START = '2019-06-01'
 DEFAULT_END = '2020-05-31'
+TIMEOUT_TO_EXPIRE = 120
 
 app = FastAPI()
+redis_instance = redis.Redis(host='redis', port=6379, db=0)
 
 def get_data(start, end):
     users = []
-    data = json.loads(redis_instance.get(start+'|'+end))
-    if not data:
+    data = redis_instance.get(start+'|'+end)
+    if data:
+        data = json.loads(data.decode('utf-8'))
+        print('_\nRedis...\nGetting {} until {} data from redis.\n'.format(start, end))
+    else:
         data = requests.get('https://api.github.com/repos/teradici/deploy/commits?since={}&until={}'.format(start, end))
         data = data.json()
-        redis_instance.set(start+'|'+end, json.dumps(data))
+        redis_instance.set(start+'|'+end, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
+        print('_\nRedis...\Adding {} until {} data to redis.\n'.format(start, end))
 
     for commit in data:
         user = next((entry for entry in users if entry.email == commit['commit']['author']['email']), None)
