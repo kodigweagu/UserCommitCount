@@ -20,11 +20,23 @@ redis_instance = redis.Redis(host='redis', port=6379)
 # initialize the API
 app = FastAPI()
 
+def list_users(data):
+    # initialize an empty list of users
+    users = []
+    # count commits for each unique author identified by email
+    for commit in data:
+        user = next((entry for entry in users if entry.email == commit['commit']['author']['email']), None)
+        if user == None:
+            users.append(User(commit['commit']['author']))
+        else:
+            user.commits += 1
+    users = sorted(users, key = lambda user: (user.commits), reverse=True)
+    # return processed list
+    return users
+
 # get_data(start, end) queries the URL and sets URL parameters since=start&until=end
 # returns all the unique authors in the query result and the count of commits associated with the author
 def get_data(start, end):
-    # initialize an empty list of users
-    users = []
     # id each cache entry by string in format 'YYYY-MM-DD|YYYY-MM-DD'
     cache_id = start+'|'+end
     data = redis_instance.get(cache_id)
@@ -40,21 +52,11 @@ def get_data(start, end):
         data = response.json()
         # cache valid response
         redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
+    return list_users(data)
 
-    # count commits for each unique author identified by email
-    for commit in data:
-        user = next((entry for entry in users if entry.email == commit['commit']['author']['email']), None)
-        if user == None:
-            users.append(User(commit['commit']['author']))
-        else:
-            user.commits += 1
-    users = sorted(users, key = lambda user: (user.commits), reverse=True)
-    # return processed list
-    return users
-
-# list_users calls get_data and returns an array of users 
+# get_users calls get_data and returns an array of users 
 @app.get("/users")
-def list_users(start: str = DEFAULT_START,end: str = DEFAULT_END):
+def get_users(start: str = DEFAULT_START,end: str = DEFAULT_END):
     list = []
     users = get_data(start, end)
     if not users is None:
