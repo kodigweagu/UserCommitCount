@@ -34,26 +34,6 @@ def list_users(data):
     # return processed list
     return users
 
-# get_data(start, end) queries the URL and sets URL parameters since=start&until=end
-# returns all the unique authors in the query result and the count of commits associated with the author
-def get_data(start, end):
-    # id each cache entry by string in format 'YYYY-MM-DD|YYYY-MM-DD'
-    cache_id = start+'|'+end
-    data = redis_instance.get(cache_id)
-    # check if there is an entry in the cache for cache_id
-    if data:
-        data = json.loads(data.decode('utf-8'))
-    else:
-        # if there's no entry in the cache make http request
-        response = requests.get('{}?since={}&until={}'.format(URL,start, end))
-        # return None for status_code not 200
-        if not response.status_code == 200:
-            return None
-        data = response.json()
-        # cache valid response
-        redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
-    return list_users(data)
-
 # get_users returns an array of users for everyone that has committed code to URL
 @app.get("/users")
 def get_users():
@@ -75,16 +55,12 @@ def get_users():
         redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
     
     users = list_users(data)
-    if not users is None:
-        # format each user in our list in this form: [ { name: string, email: string, } ]
-        for user in users:
-            entry = dict()
-            entry['name'] = user.name
-            entry['email'] = user.email
-            list.append(entry)
-    else:
-        # for bad requests return None
-        list = None
+    # format each user in our list in this form: [ { name: string, email: string, } ]
+    for user in users:
+        entry = dict()
+        entry['name'] = user.name
+        entry['email'] = user.email
+        list.append(entry)
     return list
 
 # most_frequent Count the number of commits which occurred since start until end with the format of the start and end being YYYY-MM-DD see DEFAULT_START and DEFAULT_END
@@ -108,14 +84,10 @@ def most_frequent(start: str = DEFAULT_START, end: str = DEFAULT_END):
         redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
     
     users = list_users(data)
-    if not users is None:
-        # format each user in our list in this form: [ { name: string, commits: int, } ]
-        for user in users[0:5]:
-            entry = dict()
-            entry['name'] = user.name
-            entry['commits'] = user.commits
-            list.append(entry)
-    else:
-        # for bad requests return None
-        list = None
+    # format each user in our list in this form: [ { name: string, commits: int, } ]
+    for user in users[0:5]:
+        entry = dict()
+        entry['name'] = user.name
+        entry['commits'] = user.commits
+        list.append(entry)
     return list
