@@ -1,11 +1,12 @@
 # UserCommitCount
 <p>This simple fastAPI web application interacts with GitHub's REST API's and Teradici's public repository for Cloud Access Manager: https://github.com/teradici/deploy</p>
 
-<h2>Unit Tests</h2>
-<p>docker-compose run core_api pytest</p>
-
+<p>This application requires docker-compose to run. See <a href="https://docs.docker.com/compose/install/">docker-compose installation docs.</a><a></a></p>
 <h2>Building</h2>
 <p>docker-compose build</p>
+
+<h2>Unit Tests</h2>
+<p>docker-compose run core_api pytest</p>
 
 <h2>Running the application</h2>
 <p>docker-compose up</p>
