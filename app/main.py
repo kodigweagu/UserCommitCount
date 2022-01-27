@@ -1,9 +1,9 @@
 """  """
-from fastapi import FastAPI
-from User import User
 import requests
 import json
 import redis
+from fastapi import FastAPI
+from User import User
 
 URL = 'https://api.github.com/repos/teradici/deploy/commits'
 DEFAULT_START = '2019-06-01'
@@ -20,8 +20,10 @@ def get_data(start, end):
     if data:
         data = json.loads(data.decode('utf-8'))
     else:
-        data = requests.get('{}?since={}&until={}'.format(URL,start, end))
-        data = data.json()
+        response = requests.get('{}?since={}&until={}'.format(URL,start, end))
+        if not response.status_code == 200:
+            return None
+        data = response.json()
         redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
 
     for commit in data:
@@ -37,20 +39,26 @@ def get_data(start, end):
 def list_users(start: str = DEFAULT_START,end: str = DEFAULT_END):
     list = []
     users = get_data(start, end)
-    for user in users:
-        entry = dict()
-        entry['name'] = user.name
-        entry['email'] = user.email
-        list.append(entry)
+    if not users is None:
+        for user in users:
+            entry = dict()
+            entry['name'] = user.name
+            entry['email'] = user.email
+            list.append(entry)
+    else:
+        list = None
     return list
 
 @app.get("/most-frequent")
 def most_frequent(start: str = DEFAULT_START, end: str = DEFAULT_END):
     list = []
     users = get_data(start, end)
-    for user in users[0:5]:
-        entry = dict()
-        entry['name'] = user.name
-        entry['commits'] = user.commits
-        list.append(entry)
+    if not users is None:
+        for user in users[0:5]:
+            entry = dict()
+            entry['name'] = user.name
+            entry['commits'] = user.commits
+            list.append(entry)
+    else:
+        list = None
     return list
