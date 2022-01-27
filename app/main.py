@@ -49,18 +49,22 @@ def get_users():
         response = requests.get(URL)
         # return None for status_code not 200
         if not response.status_code == 200:
-            return None
-        data = response.json()
-        # cache valid response
-        redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
-    
-    users = list_users(data)
-    # format each user in our list in this form: [ { name: string, email: string, } ]
-    for user in users:
-        entry = dict()
-        entry['name'] = user.name
-        entry['email'] = user.email
-        list.append(entry)
+            data = None
+        else:
+            data = response.json()
+            # cache valid response
+            redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
+
+    if(not data == None):
+        users = list_users(data)
+        # format each user in our list in this form: [ { name: string, email: string, } ]
+        for user in users:
+            entry = dict()
+            entry['name'] = user.name
+            entry['email'] = user.email
+            list.append(entry)
+    else:
+        list = None
     return list
 
 # most_frequent Count the number of commits which occurred since start until end with the format of the start and end being YYYY-MM-DD see DEFAULT_START and DEFAULT_END
@@ -78,16 +82,20 @@ def most_frequent(start: str = DEFAULT_START, end: str = DEFAULT_END):
         response = requests.get('{}?since={}&until={}'.format(URL,start, end))
         # return None for status_code not 200
         if not response.status_code == 200:
-            return None
-        data = response.json()
-        # cache valid response
-        redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
-    
-    users = list_users(data)
-    # format each user in our list in this form: [ { name: string, commits: int, } ]
-    for user in users[0:5]:
-        entry = dict()
-        entry['name'] = user.name
-        entry['commits'] = user.commits
-        list.append(entry)
+            data = None
+        else:
+            data = response.json()
+            # cache valid response
+            redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
+            
+    if(not data == None):
+        users = list_users(data)
+        # format each user in our list in this form: [ { name: string, commits: int, } ]
+        for user in users[0:5]:
+            entry = dict()
+            entry['name'] = user.name
+            entry['commits'] = user.commits
+            list.append(entry)
+    else:
+        list = None
     return list
