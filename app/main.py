@@ -73,23 +73,7 @@ def get_users():
 @app.get("/most-frequent")
 def most_frequent(start: str = DEFAULT_START, end: str = DEFAULT_END):
     list = []
-    # id each cache entry by string in format 'YYYY-MM-DD|YYYY-MM-DD'
-    cache_id = start+'|'+end
-    data = redis_instance.get(cache_id)
-    # check if there is an entry in the cache for cache_id
-    if data:
-        data = json.loads(data.decode('utf-8'))
-    else:
-        # if there's no entry in the cache make http request
-        response = requests.get('{}?since={}&until={}'.format(URL,start, end))
-        # return None for status_code not 200
-        if not response.status_code == 200:
-            data = None
-        else:
-            data = response.json()
-            # cache valid response
-            redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
-            
+    data = redis_get('{}?since={}&until={}'.format(URL,start, end))
     if(not data == None):
         users = list_users(data)
         # format each user in our list in this form: [ { name: string, commits: int, } ]
