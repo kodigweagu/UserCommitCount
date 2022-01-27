@@ -58,7 +58,23 @@ def get_data(start, end):
 @app.get("/users")
 def get_users(start: str = DEFAULT_START,end: str = DEFAULT_END):
     list = []
-    users = get_data(start, end)
+    # id cache entry as 'users'
+    cache_id = 'users'
+    data = redis_instance.get(cache_id)
+    # check if there is an entry in the cache for cache_id
+    if data:
+        data = json.loads(data.decode('utf-8'))
+    else:
+        # if there's no entry in the cache make http request
+        response = requests.get(URL)
+        # return None for status_code not 200
+        if not response.status_code == 200:
+            return None
+        data = response.json()
+        # cache valid response
+        redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
+    
+    users = list_users(data)
     if not users is None:
         # format each user in our list in this form: [ { name: string, email: string, } ]
         for user in users:
