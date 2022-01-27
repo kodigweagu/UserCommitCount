@@ -1,7 +1,11 @@
 FROM python:3.8
-COPY ./app /app
 
-RUN pip install fastapi uvicorn requests redis pytest-docker-compose
+WORKDIR /app
+
+COPY ./app /app
+COPY requirements.txt /app
+
+RUN pip install pip --upgrade && pip install -r /app/requirements.txt
 
 EXPOSE 8080
 

@@ -3,15 +3,15 @@ from fastapi import FastAPI
 from User import User
 import requests
 import json
-
 import redis
 
+URL = 'https://api.github.com/repos/teradici/deploy/commits'
 DEFAULT_START = '2019-06-01'
 DEFAULT_END = '2020-05-31'
 TIMEOUT_TO_EXPIRE = 120
 
+redis_instance = redis.Redis(host='redis', port=6379)
 app = FastAPI()
-redis_instance = redis.Redis(host='redis', port=6379, db=0)
 
 def get_data(start, end):
     users = []
@@ -20,7 +20,7 @@ def get_data(start, end):
     if data:
         data = json.loads(data.decode('utf-8'))
     else:
-        data = requests.get('https://api.github.com/repos/teradici/deploy/commits?since={}&until={}'.format(start, end))
+        data = requests.get('{}?since={}&until={}'.format(URL,start, end))
         data = data.json()
         redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
 
