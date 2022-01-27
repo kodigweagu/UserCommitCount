@@ -20,6 +20,24 @@ redis_instance = redis.Redis(host='redis', port=6379)
 # initialize the API
 app = FastAPI()
 
+def redis_get(request_url):
+    # id cache entry as 'users'
+    data = redis_instance.get(request_url)
+    # check if there is an entry in the cache for cache_id
+    if data:
+        data = json.loads(data.decode('utf-8'))
+    else:
+        # if there's no entry in the cache make http request
+        response = requests.get(request_url)
+        # return None for status_code not 200
+        if not response.status_code == 200:
+            data = None
+        else:
+            data = response.json()
+            # cache valid response
+            redis_instance.set(request_url, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
+    return data
+
 def list_users(data):
     # initialize an empty list of users
     users = []
@@ -38,23 +56,7 @@ def list_users(data):
 @app.get("/users")
 def get_users():
     list = []
-    # id cache entry as 'users'
-    cache_id = 'users'
-    data = redis_instance.get(cache_id)
-    # check if there is an entry in the cache for cache_id
-    if data:
-        data = json.loads(data.decode('utf-8'))
-    else:
-        # if there's no entry in the cache make http request
-        response = requests.get(URL)
-        # return None for status_code not 200
-        if not response.status_code == 200:
-            data = None
-        else:
-            data = response.json()
-            # cache valid response
-            redis_instance.set(cache_id, json.dumps(data), ex=TIMEOUT_TO_EXPIRE)
-
+    data = redis_get(URL)
     if(not data == None):
         users = list_users(data)
         # format each user in our list in this form: [ { name: string, email: string, } ]
